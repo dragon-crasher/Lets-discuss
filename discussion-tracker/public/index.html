@@ -179,8 +179,8 @@
   </div>
   
   <script>
-    // API endpoints
-    const API_BASE = '/api';
+    // API endpoints - adjusted for Netlify Functions
+    const API_BASE = '/.netlify/functions/api';
     const TOPICS_ENDPOINT = `${API_BASE}/topics`;
     const ARCHIVE_ENDPOINT = `${API_BASE}/archive`;
     
@@ -349,9 +349,37 @@
       }
     }
     
-    // Export archive
-    function exportArchive() {
-      window.location.href = `${ARCHIVE_ENDPOINT}/export`;
+    // Export archive - download as JSON file
+    async function exportArchive() {
+      try {
+        const response = await fetch(`${ARCHIVE_ENDPOINT}/export`);
+        
+        if (!response.ok) {
+          throw new Error(`Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.length === 0) {
+          alert('No archived topics to export.');
+          return;
+        }
+        
+        // Create a file to download
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = 'discussion-archive-' + new Date().toISOString().split('T')[0] + '.json';
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+        
+        hideError();
+      } catch (error) {
+        showError(`Failed to export archive: ${error.message}`);
+      }
     }
     
     // Show error message
